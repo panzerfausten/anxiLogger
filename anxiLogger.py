@@ -103,7 +103,11 @@ def usage():
 	print ""
 	print "Darien Miranda <dmiranda@cicese.edu.mx>"
 	
-
+def license():
+    print "AnxiLogger  Copyright (C) 2014  Darien Miranda"
+    print "This program comes with ABSOLUTELY NO WARRANTY."
+    print "This is free software, and you are welcome to redistribute it"
+    print "under certain conditions."
 if __name__ == "__main__":
     try:
 	argv1 = sys.argv[1]
