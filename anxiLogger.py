@@ -10,7 +10,7 @@ import signal
 import csv
 from curses import wrapper
 
-class MeasureHearthRate:
+class AnxiLoggerApp:
 	def __init__(self,OUTPUT_FILE_PATH = None,mode="ANXIETY_INDUCTION",sampleTime=300):
 		self.initDateTime = datetime.now()
 		self.sw = simulationWorkflow()
@@ -23,7 +23,7 @@ class MeasureHearthRate:
 		if (OUTPUT_FILE_PATH != None):
 			#takes specified PATH and appends extra info
 			self._OUTPUT_FILE_PATH =  OUTPUT_FILE_PATH
-			#if is a sample dataset, we append _sample_
+			#if is a sample mode, we append _sample_
 			if (self.mode =="SAMPLE"):
 				self._OUTPUT_FILE_PATH += "_SAMPLE_"
 			#adds timestamp
@@ -32,7 +32,7 @@ class MeasureHearthRate:
 			self._OUTPUT_FILE = open(self._OUTPUT_FILE_PATH +".csv", 'w')
 			#we are saving to disk!
 			self.isSavingtoFile = True
-	def callback(self,value_name, value):
+	def callbackGlass(self,value_name, value):
 		#takes stamptime for each row
     		date = datetime.now()
 		sdate = date.strftime('%Y-%m-%d %H-%M:%S')
@@ -74,7 +74,7 @@ class MeasureHearthRate:
                         "Windows": 23}
     		serial_port = serial_port_dict[platform.system()]
     		self.ser = serial.Serial(serial_port)
- 		self.sw.simulation_workflow([self.callback], self.ser)	
+ 		self.sw.simulation_workflow([self.callbackGlass], self.ser)	
 	#to use it with curses 
 	def startCurse(self,stdscr):
 		self.stdscr = stdscr
@@ -82,9 +82,10 @@ class MeasureHearthRate:
 		stdscr.clear()
 		if(self.mode == "ANXIETY_INDUCTION"):
 			self.stdscr.addstr("Press [r] to change to RELAXATION MODE. Press [q] to exit\n")
-		else:
+		elif(self.mode == "SAMPLE"):
 			self.stdscr.addstr("SAMPLE MODE. Program will exit after %i seconds. Press [q] to exit\n" % self.sampleTime)
-		
+		elif(self.mode == "NOLOG"):
+			self.stdscr.addstr("NOLOG MODE. Program will not save any data to disk. Press [q] to exit\n")
 		self.stdscr.refresh()
 		curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         	mhr.main()
@@ -109,20 +110,21 @@ def license():
     print "This is free software, and you are welcome to redistribute it"
     print "under certain conditions."
 if __name__ == "__main__":
+    license()
     try:
 	argv1 = sys.argv[1]
     except:
 	usage()
 	sys.exit(1)
     if (argv1 == "--nolog"):
-        mhr = MeasureHearthRate()
+        mhr = AnxiLoggerApp(mode="NOLOG")
     elif (argv1 == "--sample"):
 	try:
 		argv2 = sys.argv[2]
 	except:
 		print "You must specify an output file"
 		sys.exit(1)
-	mhr = MeasureHearthRate(argv2,mode="SAMPLE")
+	mhr = AnxiLoggerApp(argv2,mode="SAMPLE")
     else:
-        mhr = MeasureHearthRate(argv1)
+        mhr = AnxiLoggerApp(argv1)
     wrapper(mhr.startCurse)
