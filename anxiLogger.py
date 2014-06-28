@@ -11,6 +11,7 @@ import csv
 from curses import wrapper
 
 class AnxiLoggerApp:
+	#sample time in seconds
 	def __init__(self,OUTPUT_FILE_PATH = None,mode="ANXIETY_INDUCTION",sampleTime=300):
 		self.initDateTime = datetime.now()
 		self.platform = platform.system()[0]
@@ -33,34 +34,37 @@ class AnxiLoggerApp:
 			self._OUTPUT_FILE = open(self._OUTPUT_FILE_PATH +".csv", 'w')
 			#we are saving to disk!
 			self.isSavingtoFile = True
-	def callbackGlass(self,value_name, value):
+	def updateUI(self,x,y,value):
+    		date = datetime.now()
+			#uses curses to display data
+		self.stdscr.move(2,0)
+		self.stdscr.deleteln()
+		self.stdscr.deleteln()
+		self.stdscr.deleteln()
+		self.stdscr.addstr("Start time: %s. Elapsed Time: %s seconds." %
+					(self.initDateTime.strftime('%Y-%m-%d %H:%M:%S'),  (date -self.initDateTime).seconds
+					))
+		self.stdscr.addstr(   "MODE:%s.\n" % self.mode , curses.color_pair(1))
+
+		self.stdscr.addstr(value)
+		self.stdscr.refresh()
+		c = self.stdscr.getch()
+		#sets controls in interactive console
+		if (c == ord('q')):
+			self.terminate()
+		#gets you into relaxation state
+		if (self.mode != "SAMPLE"):
+			if (c == ord('r')):
+				self.mode = "RELAXATION"
+
+	def callbackZephyr(self,value_name, value):
 		#takes stamptime for each row
     		date = datetime.now()
 		sdate = date.strftime('%Y-%m-%d %H-%M:%S')
 		#displays data only when heart_rate is reported
 		if(value_name == "heart_rate"):
-			self.stdscr.move(2,0)
-			#uses curses to display data
-			#display timings
-			self.stdscr.deleteln()
-			self.stdscr.deleteln()
-			self.stdscr.deleteln()
-			self.stdscr.addstr("Start time: %s. Elapsed Time: %s seconds." %
-						(self.initDateTime.strftime('%Y-%m-%d %H:%M:%S'),  (date -self.initDateTime).seconds
-						))
-			self.stdscr.addstr(   "MODE:%s.\n" % self.mode , curses.color_pair(1))
-
-			self.stdscr.addstr("HR:%s" %( str(value)))	
-			self.stdscr.refresh()
-			c = self.stdscr.getch()
-			#sets controls in interactive console
-			if (c == ord('q')):
-				self.terminate()
-			#gets you into relaxation state
-			if (self.mode != "SAMPLE"):
-				if (c == ord('r')):
-					self.mode = "RELAXATION"
-		#save it to file
+			self.updateUI(2,0,"HR:%s" %( str(value)))
+		#save it to file TODO:MOVE THIS TO A LOG METHOD
 		if(self.isSavingtoFile):
 			self._OUTPUT_FILE.write("%s,%s,%s,%s\n"  % (sdate,self.mode,value_name,str(value)))
 		#break if we are in sample mode
@@ -76,7 +80,7 @@ class AnxiLoggerApp:
 					"Windows": 23}
 			serial_port = serial_port_dict[platform.system()]
 			self.ser = serial.Serial(serial_port)
-			self.sw.simulation_workflow([self.callbackGlass], self.ser)
+			self.sw.simulation_workflow([self.callbackZephyr], self.ser)
 	#to use it with curses 
 	def startCurse(self,stdscr):
 		self.stdscr = stdscr
