@@ -75,12 +75,14 @@ class AnxiLoggerApp:
 		self.sw.terminate()
 	#Initialazes the devices
 	def main(self):
+			#START ZEPYRH BT
 			serial_port_dict = {"Darwin": "/dev/tty.HXM026692-BluetoothSeri",
 					"Linux": "/dev/rfcomm0",
 					"Windows": 23}
 			serial_port = serial_port_dict[platform.system()]
 			self.ser = serial.Serial(serial_port)
 			self.sw.simulation_workflow([self.callbackZephyr], self.ser)
+			#START GOOGLE GLASS
 	#to use it with curses 
 	def startCurse(self,stdscr):
 		self.stdscr = stdscr
