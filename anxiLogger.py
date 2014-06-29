@@ -1,5 +1,5 @@
-
 import serial
+import requests
 import platform
 import curses
 import zephyr
@@ -9,7 +9,9 @@ import sys
 import signal
 import csv
 from curses import wrapper
-
+#Google glass server
+from AnxiServer import AnxiServer
+import os 
 class AnxiLoggerApp:
 	#sample time in seconds
 	def __init__(self,OUTPUT_FILE_PATH = None,mode="ANXIETY_INDUCTION",sampleTime=300):
@@ -30,23 +32,27 @@ class AnxiLoggerApp:
 				self._OUTPUT_FILE_PATH += "_SAMPLE_"
 			#adds timestamp
 			self._OUTPUT_FILE_PATH += "_"+datetime.now().strftime('%Y%m%d%H%M%S')
+			#self._OUTPUT_IR_FILE_PATH = self.OUTPUT_FILE_PATH 
 			#opens output file
 			self._OUTPUT_FILE = open(self._OUTPUT_FILE_PATH +".csv", 'w')
 			#we are saving to disk!
 			self.isSavingtoFile = True
+		self._ANXY_SERVER = AnxiServerClient()
 	def updateUI(self,x,y,value):
     		date = datetime.now()
 			#uses curses to display data
 		self.stdscr.move(2,0)
 		self.stdscr.deleteln()
 		self.stdscr.deleteln()
-		self.stdscr.deleteln()
 		self.stdscr.addstr("Start time: %s. Elapsed Time: %s seconds." %
 					(self.initDateTime.strftime('%Y-%m-%d %H:%M:%S'),  (date -self.initDateTime).seconds
 					))
-		self.stdscr.addstr(   "MODE:%s.\n" % self.mode , curses.color_pair(1))
-
-		self.stdscr.addstr(value)
+		self.stdscr.addstr("MODE:%s.\n" % self.mode , curses.color_pair(1))
+		self.stdscr.addstr(value + "\n")
+		
+		#TODO: Do it better, i don't feel like doing it by myself
+		_irValue = self._ANXY_SERVER.getIRValue()
+		self.stdscr.addstr("IRSensor:%s" % str(_irValue))
 		self.stdscr.refresh()
 		c = self.stdscr.getch()
 		#sets controls in interactive console
@@ -56,7 +62,7 @@ class AnxiLoggerApp:
 		if (self.mode != "SAMPLE"):
 			if (c == ord('r')):
 				self.mode = "RELAXATION"
-
+				self._ANXY_SERVER.setMode("RELAXATION")
 	def callbackZephyr(self,value_name, value):
 		#takes stamptime for each row
     		date = datetime.now()
@@ -97,6 +103,28 @@ class AnxiLoggerApp:
 		self.stdscr.refresh()
 		curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         	mhr.main()
+class AnxiServerClient:
+	def __init__(self):
+		#Set AnxiServerDATA
+		self.ANXISERVER_IR_VALUE_URL = "http://0.0.0.0:5000/api/glass/1/irvalue"
+		self.ANXISERVER_MODE_URL= "http://0.0.0.0:5000/api/mode"
+	def getIRValue(self):
+		irValue = -1
+		try:
+			r = requests.get(self.ANXISERVER_IR_VALUE_URL)
+			irValue = float( r.text)
+		except:
+			return irValue
+		
+		return irValue
+	def setMode(self,mode):
+		try:
+			r = requests.post(self.ANXISERVER_MODE_URL)
+		except:
+			pass
+	
+			
+	
 def usage():
 	print "USAGE: python read_from_device.py [OPTIONS] [outputfile]"
 	print "OPTIONS:"
@@ -132,6 +160,7 @@ if __name__ == "__main__":
 	except:
 		print "You must specify an output file"
 		sys.exit(1)
+	print "starting sample"
 	mhr = AnxiLoggerApp(argv2,mode="SAMPLE")
     else:
         mhr = AnxiLoggerApp(argv1)
