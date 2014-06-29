@@ -7,15 +7,16 @@ class AnxiServer():
 	def __init__(self,mode,outputfile = None,port=5000):
 		self.mode = mode
 		self.port = port
+		self.outputfile= outputfile
 		self.isLogging = False
 		self.lastValue = -999
 		#if no path is specified, no data is saved
 		if(outputfile != None):
 			self.isLogging = True
 			if (self.mode == "SAMPLE"):
-				self.OUTPUT_FILE_PATH = "IR_SAMPLE" + datetime.now().strftime('%Y%m%d%H%M%S')
+				self.OUTPUT_FILE_PATH = self.outputfile + "IR_SAMPLE" + datetime.now().strftime('%Y%m%d%H%M%S')  + ".csv"
 			else:
-				self.OUTPUT_FILE_PATH = "IR" + datetime.now().strftime('%Y%m%d%H%M%S')
+				self.OUTPUT_FILE_PATH = self.outputfile +  "IR" + datetime.now().strftime('%Y%m%d%H%M%S') + ".csv"
 			
 			self.outputFile = open(self.OUTPUT_FILE_PATH, 'w')
 	def start(self):
