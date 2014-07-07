@@ -1,5 +1,5 @@
-
 import serial
+import requests
 import platform
 import curses
 import zephyr
@@ -9,8 +9,11 @@ import sys
 import signal
 import csv
 from curses import wrapper
-
+#Google glass server
+from AnxiServer import AnxiServer
+import os 
 class AnxiLoggerApp:
+	#sample time in seconds
 	def __init__(self,OUTPUT_FILE_PATH = None,mode="ANXIETY_INDUCTION",sampleTime=300):
 		self.initDateTime = datetime.now()
 		self.platform = platform.system()[0]
@@ -29,38 +32,45 @@ class AnxiLoggerApp:
 				self._OUTPUT_FILE_PATH += "_SAMPLE_"
 			#adds timestamp
 			self._OUTPUT_FILE_PATH += "_"+datetime.now().strftime('%Y%m%d%H%M%S')
+			#self._OUTPUT_IR_FILE_PATH = self.OUTPUT_FILE_PATH 
 			#opens output file
 			self._OUTPUT_FILE = open(self._OUTPUT_FILE_PATH +".csv", 'w')
 			#we are saving to disk!
 			self.isSavingtoFile = True
-	def callbackGlass(self,value_name, value):
+		self._ANXY_SERVER = AnxiServerClient()
+	def updateUI(self,x,y,value):
+    		date = datetime.now()
+			#uses curses to display data
+		self.stdscr.move(2,0)
+		self.stdscr.deleteln()
+		self.stdscr.deleteln()
+		self.stdscr.addstr("Start time: %s. Elapsed Time: %s seconds." %
+					(self.initDateTime.strftime('%Y-%m-%d %H:%M:%S'),  (date -self.initDateTime).seconds
+					))
+		self.stdscr.addstr("MODE:%s.\n" % self.mode , curses.color_pair(1))
+		self.stdscr.addstr(value + "\n")
+		
+		#TODO: Do it better, i don't feel like doing it by myself
+		_irValue = self._ANXY_SERVER.getIRValue()
+		self.stdscr.addstr("IRSensor:%s" % str(_irValue))
+		self.stdscr.refresh()
+		c = self.stdscr.getch()
+		#sets controls in interactive console
+		if (c == ord('q')):
+			self.terminate()
+		#gets you into relaxation state
+		if (self.mode != "SAMPLE"):
+			if (c == ord('r')):
+				self.mode = "RELAXATION"
+				self._ANXY_SERVER.setMode("RELAXATION")
+	def callbackZephyr(self,value_name, value):
 		#takes stamptime for each row
     		date = datetime.now()
 		sdate = date.strftime('%Y-%m-%d %H-%M:%S')
 		#displays data only when heart_rate is reported
 		if(value_name == "heart_rate"):
-			self.stdscr.move(2,0)
-			#uses curses to display data
-			#display timings
-			self.stdscr.deleteln()
-			self.stdscr.deleteln()
-			self.stdscr.deleteln()
-			self.stdscr.addstr("Start time: %s. Elapsed Time: %s seconds." %
-						(self.initDateTime.strftime('%Y-%m-%d %H:%M:%S'),  (date -self.initDateTime).seconds
-						))
-			self.stdscr.addstr(   "MODE:%s.\n" % self.mode , curses.color_pair(1))
-
-			self.stdscr.addstr("HR:%s" %( str(value)))	
-			self.stdscr.refresh()
-			c = self.stdscr.getch()
-			#sets controls in interactive console
-			if (c == ord('q')):
-				self.terminate()
-			#gets you into relaxation state
-			if (self.mode != "SAMPLE"):
-				if (c == ord('r')):
-					self.mode = "RELAXATION"
-		#save it to file
+			self.updateUI(2,0,"HR:%s" %( str(value)))
+		#save it to file TODO:MOVE THIS TO A LOG METHOD
 		if(self.isSavingtoFile):
 			self._OUTPUT_FILE.write("%s,%s,%s,%s\n"  % (sdate,self.mode,value_name,str(value)))
 		#break if we are in sample mode
@@ -71,12 +81,14 @@ class AnxiLoggerApp:
 		self.sw.terminate()
 	#Initialazes the devices
 	def main(self):
+			#START ZEPYRH BT
 			serial_port_dict = {"Darwin": "/dev/tty.HXM026692-BluetoothSeri",
 					"Linux": "/dev/rfcomm0",
 					"Windows": 23}
 			serial_port = serial_port_dict[platform.system()]
 			self.ser = serial.Serial(serial_port)
-			self.sw.simulation_workflow([self.callbackGlass], self.ser)
+			self.sw.simulation_workflow([self.callbackZephyr], self.ser)
+			#START GOOGLE GLASS
 	#to use it with curses 
 	def startCurse(self,stdscr):
 		self.stdscr = stdscr
@@ -91,6 +103,28 @@ class AnxiLoggerApp:
 		self.stdscr.refresh()
 		curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         	mhr.main()
+class AnxiServerClient:
+	def __init__(self):
+		#Set AnxiServerDATA
+		self.ANXISERVER_IR_VALUE_URL = "http://0.0.0.0:5000/api/glass/1/irvalue"
+		self.ANXISERVER_MODE_URL= "http://0.0.0.0:5000/api/mode"
+	def getIRValue(self):
+		irValue = -1
+		try:
+			r = requests.get(self.ANXISERVER_IR_VALUE_URL)
+			irValue = float( r.text)
+		except:
+			return irValue
+		
+		return irValue
+	def setMode(self,mode):
+		try:
+			r = requests.post(self.ANXISERVER_MODE_URL)
+		except:
+			pass
+	
+			
+	
 def usage():
 	print "USAGE: python read_from_device.py [OPTIONS] [outputfile]"
 	print "OPTIONS:"
@@ -126,6 +160,7 @@ if __name__ == "__main__":
 	except:
 		print "You must specify an output file"
 		sys.exit(1)
+	print "starting sample"
 	mhr = AnxiLoggerApp(argv2,mode="SAMPLE")
     else:
         mhr = AnxiLoggerApp(argv1)
