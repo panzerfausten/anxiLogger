@@ -19,4 +19,5 @@ _blinkCounts = 0
 for _line in _FILE:
 	if "blink" in _line:
 		_blinkCounts  += 1
+		print "Blink %s" % _line
 print "Total blinks: %i" % _blinkCounts

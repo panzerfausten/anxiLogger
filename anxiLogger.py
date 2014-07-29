@@ -74,7 +74,7 @@ class AnxiLoggerApp:
 		if(self.isSavingtoFile):
 			self._OUTPUT_FILE.write("%s,%s,%s,%s\n"  % (sdate,self.mode,value_name,str(value)))
 		#break if we are in sample mode
-		if(   (date - self.initDateTime).seconds >= self.sampleTime):
+		if(   (date - self.initDateTime).seconds >= self.sampleTime  and self.mode =="SAMPLE"):
 			self.terminate()
 	def terminate(self):
 		#self.ser.close()
@@ -109,12 +109,12 @@ class AnxiServerClient:
 		self.ANXISERVER_IR_VALUE_URL = "http://0.0.0.0:5000/api/glass/1/irvalue"
 		self.ANXISERVER_MODE_URL= "http://0.0.0.0:5000/api/mode"
 	def getIRValue(self):
-		irValue = -1
-		try:
-			r = requests.get(self.ANXISERVER_IR_VALUE_URL)
-			irValue = float( r.text)
-		except:
-			return irValue
+		irValue = -99999999999999999
+		#try:
+			#r = requests.get(self.ANXISERVER_IR_VALUE_URL)
+			#irValue = float( r.text)
+		#except:
+		#	return irValue
 		
 		return irValue
 	def setMode(self,mode):
