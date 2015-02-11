@@ -57,7 +57,7 @@ if (_TIMETOPLOT_START != None and _TIMETOPLOT_END !=None):
 	_hrValues = _hrValues[_TIMETOPLOT_START:_TIMETOPLOT_END]
 	index = np.arange(_TIMETOPLOT_START,_TIMETOPLOT_END)
 else:
-	pass#index = np.arange(len (_hrValues))
+	index = np.arange(len (_hrValues))
 bar_width = 1
 
 
