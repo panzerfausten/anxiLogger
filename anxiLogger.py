@@ -12,6 +12,8 @@ from curses import wrapper
 #Google glass server
 from AnxiServer import AnxiServer
 import os 
+import time
+import time
 class AnxiLoggerApp:
 	#sample time in seconds
 	def __init__(self,OUTPUT_FILE_PATH = None,mode="ANXIETY_INDUCTION",sampleTime=300):
@@ -65,8 +67,11 @@ class AnxiLoggerApp:
 				self._ANXY_SERVER.setMode("RELAXATION")
 	def callbackZephyr(self,value_name, value):
 		#takes stamptime for each row
-    		date = datetime.now()
-		sdate = date.strftime('%Y-%m-%d %H-%M:%S')
+		date = datetime.now()
+		#Now the time is in unix time
+    		unixdate = time.time()
+		#save date in unixtime
+		sdate = str(unixdate)
 		#displays data only when heart_rate is reported
 		if(value_name == "heart_rate"):
 			self.updateUI(2,0,"HR:%s" %( str(value)))

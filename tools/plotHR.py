@@ -59,7 +59,7 @@ ax.set_ylabel('HR Value')
 ax.set_xlabel('Time (Seconds)' )
 ax.set_title('HR Value from:[%s]' % _SUBJECT_NAME)
 ax.grid(True)
-plt.ylim([40,180])
+plt.ylim([55,95])
 #show it
 plt.tight_layout()
 plt.savefig(_OUTPUT_FIG_PATH)
